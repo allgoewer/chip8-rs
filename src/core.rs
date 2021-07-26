@@ -1,8 +1,6 @@
 pub mod instructions;
 
-use crate::{
-    peripherals::{Graphics, Keys, Timer},
-};
+use crate::peripherals::{Graphics, Keys, Timer};
 
 #[derive(Debug)]
 pub struct Core<'memory> {

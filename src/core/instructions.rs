@@ -1,5 +1,5 @@
 use crate::Error;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use Instruction::*;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -211,11 +211,11 @@ impl Instruction {
     }
 }
 
-impl TryFrom<[u8; 2]> for Instruction {
+impl TryFrom<&[u8]> for Instruction {
     type Error = Error;
 
-    fn try_from(instruction: [u8; 2]) -> Result<Self, Error> {
-        let ins = u16::from_be_bytes(instruction);
+    fn try_from(instruction: &[u8]) -> Result<Self, Error> {
+        let ins = u16::from_be_bytes(instruction.try_into()?);
         match ins {
             0x0000..=0x0FFF => Self::decode_0(ins),
             0x1000..=0x1FFF => Self::decode_1(ins),
@@ -245,14 +245,14 @@ mod tests {
 
     macro_rules! itf_ok {
         ( $upper:expr, $lower:expr, $rhs:expr ) => {
-            assert_eq!(Instruction::try_from([$upper, $lower]), Ok($rhs));
-        }
+            assert_eq!(Instruction::try_from([$upper, $lower].as_ref()), Ok($rhs));
+        };
     }
 
     macro_rules! itf_err {
         ( $upper:expr, $lower:expr, $rhs:expr ) => {
-            assert_eq!(Instruction::try_from([$upper, $lower]), Err($rhs));
-        }
+            assert_eq!(Instruction::try_from([$upper, $lower].as_ref()), Err($rhs));
+        };
     }
 
     #[test]

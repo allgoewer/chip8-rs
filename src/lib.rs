@@ -7,12 +7,20 @@ use crate::peripherals::{Graphics, Keypad, Timer};
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     InvalidInstruction,
+    InvalidAlignment,
+}
+
+impl From<std::array::TryFromSliceError> for Error {
+    fn from(_: std::array::TryFromSliceError) -> Self {
+        Self::InvalidAlignment
+    }
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidInstruction => write!(f, "Invalid instruction"),
+            Self::InvalidAlignment => write!(f, "Invalid alignment"),
         }
     }
 }

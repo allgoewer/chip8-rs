@@ -21,14 +21,18 @@ impl Keypad for NullKeypad {
 }
 
 #[derive(Debug)]
-pub struct Pos(u8, u8);
+pub struct Pos(pub u8, pub u8);
 
 #[derive(Debug)]
-pub struct Sprite<'memory>(&'memory [u8]);
+pub struct Sprite<'memory>(pub &'memory [u8]);
 
 pub trait Graphics {
+    const WIDTH: usize = 64;
+    const HEIGHT: usize = 32;
+
     fn clear(&mut self);
-    fn draw_sprite(&mut self, pos: Pos, sprite: Sprite<'_>);
+    fn toggle_sprite(&mut self, pos: Pos, sprite: Sprite<'_>) -> bool;
+    fn refresh(&mut self);
 }
 
 #[derive(Debug)]
@@ -36,7 +40,8 @@ pub struct NullGraphics;
 
 impl Graphics for NullGraphics {
     fn clear(&mut self) {}
-    fn draw_sprite(&mut self, _pos: Pos, _sprite: Sprite<'_>) {}
+    fn toggle_sprite(&mut self, _pos: Pos, _sprite: Sprite<'_>) -> bool { false }
+    fn refresh(&mut self) {}
 }
 
 pub trait Timer {

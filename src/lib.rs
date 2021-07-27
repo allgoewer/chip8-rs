@@ -30,6 +30,7 @@ impl std::error::Error for Error {}
 #[derive(Debug)]
 pub struct Chip8<'memory, K, G, TD, TS> {
     core: Core<'memory>,
+    core_freq: u32,
     keypad: K,
     graphics: G,
     timer_delay: TD,
@@ -47,7 +48,7 @@ where
 {
     pub fn new(
         core: Core<'memory>,
-        freq: u32,
+        core_freq: u32,
         keypad: K,
         graphics: G,
         timer_delay: TD,
@@ -55,11 +56,12 @@ where
     ) -> Self {
         Self {
             core,
+            core_freq,
             keypad,
             graphics,
             timer_delay,
             timer_sound,
-            timer_freq_div: freq / 60,
+            timer_freq_div: core_freq / 60,
             timer_freq_count: 0,
         }
     }

@@ -9,12 +9,12 @@ fn main() {
 
     let mut chip8 = Chip8::new(
         core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
-        60,
+        700,
         NullKeypad,
         NullGraphics,
         DownTimer::default(),
         DownTimer::default(),
     );
 
-    chip8.tick();
+    chip8.run();
 }

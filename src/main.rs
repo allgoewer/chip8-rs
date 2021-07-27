@@ -1,36 +1,39 @@
+use std::io::Read;
+
 use chip8::core;
-use chip8::peripherals::{DownTimer, Graphics, Pos, Sprite, NullGraphics, NullKeypad};
-use chip8::Chip8;
+use chip8::peripherals::{DownTimer, Graphics, NullGraphics, NullKeypad, Pos, Sprite};
 use chip8::util::minifb::MinifbDisplay;
+use chip8::Chip8;
+
+fn load_program<P: AsRef<std::path::Path>>(path: P, target: &mut [u8]) -> std::io::Result<()> {
+    let mut rom = std::fs::File::open(path.as_ref())?;
+    rom.read(&mut target[0x200..])?;
+
+    Ok(())
+}
 
 fn main() {
-    let mut mem = [0; 2048];
-    let mut reg = [0; 16];
-    let mut stack = [0; 16];
+    let mut mem = vec![0; 2048];
+    let mut reg = vec![0; 16];
+    let mut stack = vec![0; 16];
+
+    load_program("roms/IBM Logo.ch8", &mut mem[..]).expect("Failed loading ROM");
 
     let mut minifb = MinifbDisplay::new(60).expect("Could not crate minifb display");
-
-    let mut chip8 = Chip8::new(
-        core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
-        700,
-        NullKeypad,
-        NullGraphics,
-        DownTimer::default(),
-        DownTimer::default(),
-    );
-
-    let mut adapter = minifb.graphics_adapter();
+    let graphics_adapter = minifb.graphics_adapter();
 
     std::thread::spawn(move || {
-        let sprite_a: [u8; 5] = [0xF0, 0x90, 0xF0, 0x90, 0x90];
-        let sprite_b: [u8; 5] = [0xE0, 0x90, 0xE0, 0x90, 0xE0];
-        let sprite_c: [u8; 5] = [0xF0, 0x80, 0x80, 0x80, 0xF0];
-        let sprite_d: [u8; 5] = [0xE0, 0x90, 0x90, 0x90, 0xE0];
+        let mut chip8 = Chip8::new(
+            core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
+            700,
+            NullKeypad,
+            graphics_adapter,
+            DownTimer::default(),
+            DownTimer::default(),
+        );
 
-        loop {
-            adapter.clear();
-            adapter.refresh();
-            std::thread::sleep(std::time::Duration::from_micros(1_000_000 / 1));
+        if let Err(e) = chip8.run() {
+            println!("CHIP-8 Error: {}", e);
         }
     });
 

@@ -40,7 +40,9 @@ pub struct NullGraphics;
 
 impl Graphics for NullGraphics {
     fn clear(&mut self) {}
-    fn toggle_sprite(&mut self, _pos: Pos, _sprite: Sprite<'_>) -> bool { false }
+    fn toggle_sprite(&mut self, _pos: Pos, _sprite: Sprite<'_>) -> bool {
+        false
+    }
     fn refresh(&mut self) {}
 }
 

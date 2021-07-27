@@ -3,7 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use Instruction::*;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Register(u8);
+pub struct Register(pub(crate) u8);
 
 impl From<u16> for Register {
     fn from(val: u16) -> Self {
@@ -12,7 +12,7 @@ impl From<u16> for Register {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct RegisterRange(u8);
+pub struct RegisterRange(pub(crate) u8);
 
 impl From<u16> for RegisterRange {
     fn from(val: u16) -> Self {
@@ -21,7 +21,7 @@ impl From<u16> for RegisterRange {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Address(u16);
+pub struct Address(pub(crate) u16);
 
 impl From<u16> for Address {
     fn from(val: u16) -> Self {
@@ -30,7 +30,7 @@ impl From<u16> for Address {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Value8(u8);
+pub struct Value8(pub(crate) u8);
 
 impl From<u16> for Value8 {
     fn from(val: u16) -> Self {
@@ -39,7 +39,7 @@ impl From<u16> for Value8 {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Value4(u8);
+pub struct Value4(pub(crate) u8);
 
 impl From<u16> for Value4 {
     fn from(val: u16) -> Self {
@@ -110,7 +110,7 @@ impl Instruction {
             0x00E0 => Ok(I00E0),
             0x00EE => Ok(I00EE),
             0x0200..=0x0FFF => Ok(I0NNN(Address::from(ins))),
-            _ => Err(Error::InvalidInstruction),
+            _ => Err(Error::InvalidInstruction(ins)),
         }
     }
 
@@ -133,7 +133,7 @@ impl Instruction {
     fn decode_5(ins: u16) -> Result<Self, Error> {
         match ins.nibbles() {
             (0x5, x, y, 0x0) => Ok(I5XY0(Register::from(x), Register::from(y))),
-            _ => Err(Error::InvalidInstruction),
+            _ => Err(Error::InvalidInstruction(ins)),
         }
     }
 
@@ -156,14 +156,14 @@ impl Instruction {
             (8, x, y, 0x6) => Ok(I8XY6(Register::from(x), Register::from(y))),
             (8, x, y, 0x7) => Ok(I8XY7(Register::from(x), Register::from(y))),
             (8, x, y, 0xE) => Ok(I8XYE(Register::from(x), Register::from(y))),
-            _ => Err(Error::InvalidInstruction),
+            _ => Err(Error::InvalidInstruction(ins)),
         }
     }
 
     fn decode_9(ins: u16) -> Result<Self, Error> {
         match ins.nibbles() {
             (9, x, y, 0) => Ok(I9XY0(Register::from(x), Register::from(y))),
-            _ => Err(Error::InvalidInstruction),
+            _ => Err(Error::InvalidInstruction(ins)),
         }
     }
 
@@ -191,7 +191,7 @@ impl Instruction {
         match ins.nibbles() {
             (0xE, x, 0x9, 0xE) => Ok(IEX9E(Register::from(x))),
             (0xE, x, 0xA, 0x1) => Ok(IEXA1(Register::from(x))),
-            _ => Err(Error::InvalidInstruction),
+            _ => Err(Error::InvalidInstruction(ins)),
         }
     }
 
@@ -206,7 +206,7 @@ impl Instruction {
             (0xF, x, 0x3, 0x3) => Ok(IFX33(Register::from(x))),
             (0xF, x, 0x5, 0x5) => Ok(IFX55(RegisterRange::from(x))),
             (0xF, x, 0x6, 0x5) => Ok(IFX65(RegisterRange::from(x))),
-            _ => Err(Error::InvalidInstruction),
+            _ => Err(Error::InvalidInstruction(ins)),
         }
     }
 }
@@ -215,7 +215,7 @@ impl TryFrom<&[u8]> for Instruction {
     type Error = Error;
 
     fn try_from(instruction: &[u8]) -> Result<Self, Error> {
-        let ins = u16::from_be_bytes(instruction.try_into()?);
+        let ins = u16::from_be_bytes(instruction[0..2].try_into()?);
         match ins {
             0x0000..=0x0FFF => Self::decode_0(ins),
             0x1000..=0x1FFF => Self::decode_1(ins),
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn decode_0_err() {
-        itf_err!(0x00, 0x00, InvalidInstruction);
-        itf_err!(0x01, 0xFF, InvalidInstruction);
+        itf_err!(0x00, 0x00, InvalidInstruction(0x0000));
+        itf_err!(0x01, 0xFF, InvalidInstruction(0x01FF));
     }
 }

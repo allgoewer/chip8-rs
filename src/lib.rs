@@ -7,7 +7,7 @@ use crate::peripherals::{Graphics, Keypad, Timer};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
-    InvalidInstruction,
+    InvalidInstruction(u16),
     InvalidAlignment,
 }
 
@@ -20,7 +20,7 @@ impl From<std::array::TryFromSliceError> for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InvalidInstruction => write!(f, "Invalid instruction"),
+            Self::InvalidInstruction(ins) => write!(f, "Invalid instruction: 0x{:02X}", ins),
             Self::InvalidAlignment => write!(f, "Invalid alignment"),
         }
     }
@@ -67,38 +67,44 @@ where
         }
     }
 
-    pub fn run(&mut self) {
-        use std::time::{Duration, Instant};
+    pub fn run(&mut self) -> Result<(), Error> {
         use std::thread::sleep;
+        use std::time::{Duration, Instant};
 
         let cycle_duration = Duration::from_micros(1_000_000 / self.core_freq as u64);
 
         loop {
             let before_tick = Instant::now();
+            self.tick()?;
 
-            self.tick();
-            sleep(cycle_duration - before_tick.elapsed());
+            if let Some(remaining) = cycle_duration.checked_sub(before_tick.elapsed()) {
+                sleep(remaining);
+            }
         }
+
+        Ok(())
     }
 
-    pub fn tick(&mut self) {
-        self.tick_core();
+    pub fn tick(&mut self) -> Result<(), Error> {
+        self.tick_core()?;
 
         self.timer_freq_count += 1;
         if self.timer_freq_count >= self.timer_freq_div {
             self.timer_freq_count = 0;
             self.tick_timers();
         }
+
+        Ok(())
     }
 
-    fn tick_core(&mut self) {
+    fn tick_core(&mut self) -> Result<(), Error> {
         let keys = self.keypad.pressed_keys();
         self.core.tick(
             keys,
             &mut self.graphics,
             &mut self.timer_delay,
             &mut self.timer_sound,
-        );
+        )
     }
 
     fn tick_timers(&mut self) {

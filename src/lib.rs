@@ -64,6 +64,20 @@ where
         }
     }
 
+    pub fn run(&mut self, instructions_per_second: u64) {
+        use std::time::{Duration, Instant};
+        use std::thread::sleep;
+
+        let cycle_duration = Duration::from_micros(1_000_000 / instructions_per_second);
+
+        loop {
+            let before_tick = Instant::now();
+
+            self.tick();
+            sleep(cycle_duration - before_tick.elapsed());
+        }
+    }
+
     pub fn tick(&mut self) {
         self.tick_core();
 

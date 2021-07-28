@@ -2,7 +2,7 @@ use crate::Error;
 use std::convert::{TryFrom, TryInto};
 use Instruction::*;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Register(pub(crate) u8);
 
 impl From<u8> for Register {
@@ -11,7 +11,7 @@ impl From<u8> for Register {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RegisterRange(pub(crate) u8);
 
 impl From<u8> for RegisterRange {
@@ -20,20 +20,16 @@ impl From<u8> for RegisterRange {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Address(pub(crate) u16);
 
 impl From<(u8, u8, u8)> for Address {
     fn from(val: (u8, u8, u8)) -> Self {
-        Self(
-            ((val.0 as u16) << 8) & 0xF00 |
-            ((val.1 as u16) << 4) & 0x0F0  |
-            (val.2 as u16) & 0x00F
-        )
+        Self(((val.0 as u16) << 8) & 0xF00 | ((val.1 as u16) << 4) & 0x0F0 | (val.2 as u16) & 0x00F)
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Value8(pub(crate) u8);
 
 impl From<(u8, u8)> for Value8 {
@@ -42,7 +38,7 @@ impl From<(u8, u8)> for Value8 {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Value4(pub(crate) u8);
 
 impl From<u8> for Value4 {
@@ -110,7 +106,7 @@ impl Instruction {
     }
 
     fn decode_5(x: Register, y: Register, v: Value4) -> Result<Self, ()> {
-        match v { 
+        match v {
             Value4(0) => Ok(I5XY0(x, y)),
             _ => Err(()),
         }

@@ -9,6 +9,7 @@ use crate::peripherals::{Graphics, Keypad, Timer};
 pub enum Error {
     InvalidInstruction(u16),
     InvalidAlignment,
+    StackOverflow,
 }
 
 impl From<std::array::TryFromSliceError> for Error {
@@ -22,6 +23,7 @@ impl std::fmt::Display for Error {
         match self {
             Self::InvalidInstruction(ins) => write!(f, "Invalid instruction: 0x{:02X}", ins),
             Self::InvalidAlignment => write!(f, "Invalid alignment"),
+            Self::StackOverflow => write!(f, "Stack overflow"),
         }
     }
 }

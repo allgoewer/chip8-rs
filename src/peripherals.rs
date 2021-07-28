@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub struct Keys(u16);
+pub struct Keys(pub(crate) u8);
 
 impl Keys {
     pub fn pressed(&self) -> bool {

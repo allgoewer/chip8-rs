@@ -110,6 +110,7 @@ name = "chip8-rs"
 version = "0.1.0"
 dependencies = [
  "minifb",
+ "rand",
 ]
 
 [[package]]

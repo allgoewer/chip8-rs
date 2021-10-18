@@ -1,10 +1,22 @@
 pub mod instructions;
 
-use crate::peripherals::{Graphics, Keys, Pos, Sprite, Timer};
+use crate::peripherals::{FallingEdges, Graphics, Keys, Pos, Sprite, Timer};
 use crate::Error;
-use instructions::{Address, Instruction, Register, RegisterRange, Value4, Value8};
+use instructions::{Instruction, Register};
+use log::{debug, trace};
 use rand::prelude::*;
 use std::convert::TryFrom;
+
+fn bcd(val: u8) -> (u8, u8, u8) {
+    let hundreds = val / 100;
+
+    let val = val - (hundreds * 100);
+    let tens = val / 10;
+
+    let ones = val - (tens * 10);
+
+    (hundreds, tens, ones)
+}
 
 #[derive(Debug)]
 pub struct Core<'memory> {
@@ -14,15 +26,37 @@ pub struct Core<'memory> {
     i: u16,
     pc: u16,
     sp: u8,
+    last_instruction: Option<Instruction>,
+}
+
+impl std::fmt::Display for Core<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(instruction) = &self.last_instruction {
+            write!(
+                f,
+                "PC {:04X} SP {:02X} I {:04X} regs {:02X?} [{}]",
+                self.pc, self.sp, self.i, self.reg, instruction
+            )
+        } else {
+            write!(
+                f,
+                "PC {:04X} SP {:02X} I {:04X} regs {:02X?}",
+                self.pc, self.sp, self.i, self.reg
+            )
+        }
+    }
 }
 
 impl<'memory> Core<'memory> {
     const VF: Register = Register(15);
+    const FONT_LEN: usize = 5;
 
     pub fn new(mem: &'memory mut [u8], reg: &'memory mut [u8], stack: &'memory mut [u16]) -> Self {
         assert!(mem.len() >= 2048);
         assert!(reg.len() >= 16);
         assert!(stack.len() >= 16);
+
+        Self::load_font(mem);
 
         Self {
             mem,
@@ -31,12 +65,35 @@ impl<'memory> Core<'memory> {
             i: 0,
             pc: 0x200,
             sp: 0,
+            last_instruction: None,
         }
+    }
+
+    fn load_font(loc: &mut [u8]) {
+        loc[0..(Self::FONT_LEN * 16)].copy_from_slice(&[
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+        ]);
     }
 
     pub fn tick<G, TD, TS>(
         &mut self,
         keys: Keys,
+        mut edges: FallingEdges,
         graphics: &mut G,
         timer_delay: &mut TD,
         timer_sound: &mut TS,
@@ -51,6 +108,7 @@ impl<'memory> Core<'memory> {
             Normal,
             Skip(u16),
             Jump(u16),
+            Ret(u16),
         }
 
         use instructions::Instruction::*;
@@ -59,7 +117,8 @@ impl<'memory> Core<'memory> {
         let mut pc_after = Normal;
         let mut pc = |pc| pc_after = pc;
 
-        match Instruction::try_from(&self.mem[self.pc as usize..])? {
+        let instruction = Instruction::try_from(&self.mem[self.pc as usize..])?;
+        match instruction.clone() {
             // SYS addr
             // Jump to a machine code routine at nnn
             I0NNN(_nnn) => unimplemented!(),
@@ -73,7 +132,7 @@ impl<'memory> Core<'memory> {
 
             // RET
             // Return from a subroutine
-            I00EE => pc(Jump(self.pop()?)),
+            I00EE => pc(Ret(self.pop()?)),
 
             // JP addr
             // Jump to location nnn
@@ -219,7 +278,7 @@ impl<'memory> Core<'memory> {
             // SKP Vx
             // Skip next instruction if key with the value of Vx is pressed
             IEX9E(x) => {
-                if *self.r(x) == keys.0 {
+                if keys.pressed(*self.r(x)) {
                     pc(Skip(1));
                 }
             }
@@ -227,20 +286,24 @@ impl<'memory> Core<'memory> {
             // SKNP Vx
             // Skip next instruction if key with the value of Vx is not pressed
             IEXA1(x) => {
-                if *self.r(x) != keys.0 {
+                if !keys.pressed(*self.r(x)) {
                     pc(Skip(1));
                 }
             }
 
             // LD Tx, DT
             // Set Vx = delay timer value
-            IFX07(x) => *self.r(x) = timer_delay.get(),
+            IFX07(x) => {
+                *self.r(x) = timer_delay.get();
+            }
 
             // LD Vx, K
             // Wait for a key press, store the value of the key in Vx
             IFX0A(x) => {
-                if keys.pressed() {
-                    *self.r(x) = keys.0;
+                let old_edges = edges.clone();
+                if let Some(idx) = edges.pop_next_idx() {
+                    debug!("IFX0A {:?}", old_edges);
+                    *self.r(x) = idx;
                 } else {
                     pc(Hold);
                 }
@@ -263,19 +326,32 @@ impl<'memory> Core<'memory> {
 
             // LD F, Vx
             // Set I = location of sprite for digit Vx
-            IFX29(x) => todo!(),
+            IFX29(x) => self.i = *self.r(x) as u16 * Self::FONT_LEN as u16,
 
             // LD B, Vx
             // Store BCD representation of Vx in memory locations I, I+1 and I+2
-            IFX33(x) => todo!(),
+            IFX33(x) => {
+                let (hundreds, tens, ones) = bcd(*self.r(x));
+                self.mem[self.i as usize] = hundreds;
+                self.mem[self.i as usize + 1] = tens;
+                self.mem[self.i as usize + 2] = ones;
+            }
 
             // LD [I], Vx
             // Store registers V0 through Vx in memory starting at location I
-            IFX55(x) => todo!(),
+            IFX55(x) => {
+                for i in 0..(x.0 + 1) {
+                    self.mem[self.i as usize + i as usize] = *self.r(i.into());
+                }
+            }
 
             // LD Vx, [I]
             // Read registers V0 through Vx from memory starting at location I
-            IFX65(x) => todo!(),
+            IFX65(x) => {
+                for i in 0..(x.0 + 1) {
+                    *self.r(i.into()) = self.mem[self.i as usize + i as usize];
+                }
+            }
         }
 
         // Update the program counter
@@ -288,7 +364,13 @@ impl<'memory> Core<'memory> {
             ModPc::Skip(n) => self.pc += 2 * (n + 1),
             // Set the PC to a fixed value
             ModPc::Jump(pc) => self.pc = pc,
+            // Return from call
+            ModPc::Ret(pc) => self.pc = pc + 2,
         }
+
+        self.last_instruction = Some(instruction);
+
+        trace!("{}", self);
 
         Ok(())
     }
@@ -315,5 +397,15 @@ impl<'memory> Core<'memory> {
         self.sp += 1;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn bcd() {
+        assert_eq!(super::bcd(123), (1, 2, 3));
+        assert_eq!(super::bcd(023), (0, 2, 3));
+        assert_eq!(super::bcd(003), (0, 0, 3));
     }
 }

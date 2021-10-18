@@ -1,41 +1,70 @@
-use std::io::Read;
+use std::sync::mpsc::channel;
 
+use anyhow::{Context, Result};
 use chip8::core;
-use chip8::peripherals::{DownTimer, Graphics, NullGraphics, NullKeypad, Pos, Sprite};
+use chip8::peripherals::DownTimer;
+use chip8::util::load_program;
 use chip8::util::minifb::MinifbDisplay;
 use chip8::Chip8;
+use log::{debug, error, info};
 
-fn load_program<P: AsRef<std::path::Path>>(path: P, target: &mut [u8]) -> std::io::Result<()> {
-    let mut rom = std::fs::File::open(path.as_ref())?;
-    rom.read(&mut target[0x200..])?;
+const HELP: &str = "\
+chip8-emu - An emulator for the CHIP-8 CPU
 
-    Ok(())
-}
+USAGE:
+    chip8-emu ROM_FILE
 
-fn main() {
-    let mut mem = vec![0; 2048];
+ARGS:
+    ROM_FILE    Path to a CHIP-8 ROM (*.ch8)
+";
+
+fn main() -> Result<()> {
+    env_logger::init();
+
+    let path = match std::env::args().skip(1).next() {
+        Some(path) => path,
+        None => {
+            eprintln!("{}", HELP);
+            return Ok(());
+        }
+    };
+
+    let mut mem = vec![0; 4096];
     let mut reg = vec![0; 16];
     let mut stack = vec![0; 16];
 
-    load_program("roms/IBM Logo.ch8", &mut mem[..]).expect("Failed loading ROM");
+    info!("Loading program from {}", path);
+    load_program(&path, &mut mem[..]).with_context({
+        let path = path.clone();
+        move || format!("Loading program \"{}\"", path)
+    })?;
 
-    let mut minifb = MinifbDisplay::new(60).expect("Could not crate minifb display");
+    let mut minifb = MinifbDisplay::new(60).with_context(|| "Creating minifb display")?;
     let graphics_adapter = minifb.graphics_adapter();
+    let keypad_adapter = minifb.keypad_adater();
 
+    let (tx_stop_gui, rx_stop_gui) = channel();
+
+    debug!("Spawning CHIP-8 thread");
     std::thread::spawn(move || {
         let mut chip8 = Chip8::new(
             core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
             700,
-            NullKeypad,
+            keypad_adapter,
             graphics_adapter,
-            DownTimer::default(),
-            DownTimer::default(),
+            DownTimer::new("delay"),
+            DownTimer::new("sound"),
         );
 
         if let Err(e) = chip8.run() {
-            println!("CHIP-8 Error: {}", e);
+            error!("CHIP-8 stopped: {}", e);
+            tx_stop_gui.send(()).expect("Sending stop to gui");
         }
     });
 
-    minifb.run().expect("Running minifb failed");
+    debug!("Starting GUI");
+    minifb.run(rx_stop_gui).with_context(|| "Running minifb")?;
+
+    info!("Exiting");
+    Ok(())
 }

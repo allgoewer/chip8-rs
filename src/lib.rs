@@ -1,3 +1,6 @@
+#![forbid(unsafe_code)]
+#![warn(/*missing_docs,*/ missing_debug_implementations, rust_2018_idioms)]
+
 pub mod core;
 pub mod peripherals;
 pub mod util;
@@ -42,6 +45,12 @@ pub struct Chip8<'memory, K, G, TD, TS> {
     timer_freq_count: u32,
 }
 
+impl<K, G, TD, TS> std::fmt::Display for Chip8<'_, K, G, TD, TS> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.core)
+    }
+}
+
 impl<'memory, K, G, TD, TS> Chip8<'memory, K, G, TD, TS>
 where
     K: Keypad,
@@ -83,8 +92,6 @@ where
                 sleep(remaining);
             }
         }
-
-        Ok(())
     }
 
     pub fn tick(&mut self) -> Result<(), Error> {
@@ -101,8 +108,11 @@ where
 
     fn tick_core(&mut self) -> Result<(), Error> {
         let keys = self.keypad.pressed_keys();
+        let edges = self.keypad.last_released_key();
+
         self.core.tick(
             keys,
+            edges,
             &mut self.graphics,
             &mut self.timer_delay,
             &mut self.timer_sound,

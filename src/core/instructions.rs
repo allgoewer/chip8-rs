@@ -11,12 +11,9 @@ impl From<u8> for Register {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RegisterRange(pub(crate) u8);
-
-impl From<u8> for RegisterRange {
-    fn from(val: u8) -> Self {
-        Self(val & 0x0F)
+impl std::fmt::Display for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "V{:X}", self.0)
     }
 }
 
@@ -29,12 +26,24 @@ impl From<(u8, u8, u8)> for Address {
     }
 }
 
+impl std::fmt::Display for Address {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:03X}", self.0)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Value8(pub(crate) u8);
 
 impl From<(u8, u8)> for Value8 {
     fn from(val: (u8, u8)) -> Self {
         Self((val.0 << 4) | (val.1 & 0x0F))
+    }
+}
+
+impl std::fmt::Display for Value8 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:02X}", self.0)
     }
 }
 
@@ -47,6 +56,12 @@ impl From<u8> for Value4 {
     }
 }
 
+impl std::fmt::Display for Value4 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:X}", self.0)
+    }
+}
+
 fn nibbles(val: u16) -> (u8, u8, u8, u8) {
     (
         (val >> 12) as u8,
@@ -56,7 +71,7 @@ fn nibbles(val: u16) -> (u8, u8, u8, u8) {
     )
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
     I0NNN(Address),
     I00E0,
@@ -91,8 +106,50 @@ pub enum Instruction {
     IFX1E(Register),
     IFX29(Register),
     IFX33(Register),
-    IFX55(RegisterRange),
-    IFX65(RegisterRange),
+    IFX55(Register),
+    IFX65(Register),
+}
+
+impl std::fmt::Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            I0NNN(nnn) => write!(f, "SYS {}", nnn),
+            I00E0 => write!(f, "CLS"),
+            I00EE => write!(f, "RET"),
+            I1NNN(nnn) => write!(f, "JP {}", nnn),
+            I2NNN(nnn) => write!(f, "CALL {}", nnn),
+            I3XNN(x, vv) => write!(f, "SE {}, {}", x, vv),
+            I4XNN(x, vv) => write!(f, "SNE {}, {}", x, vv),
+            I5XY0(x, y) => write!(f, "SE {}, {}", x, y),
+            I6XNN(x, vv) => write!(f, "LD {}, {}", x, vv),
+            I7XNN(x, vv) => write!(f, "ADD {}, {}", x, vv),
+            I8XY0(x, y) => write!(f, "LD {}, {}", x, y),
+            I8XY1(x, y) => write!(f, "OR {}, {}", x, y),
+            I8XY2(x, y) => write!(f, "AND {}, {}", x, y),
+            I8XY3(x, y) => write!(f, "XOR {}, {}", x, y),
+            I8XY4(x, y) => write!(f, "ADD {}, {}", x, y),
+            I8XY5(x, y) => write!(f, "SUB {}, {}", x, y),
+            I8XY6(x, y) => write!(f, "SHR {} {{,{}}}", x, y),
+            I8XY7(x, y) => write!(f, "SUBN {}, {}", x, y),
+            I8XYE(x, y) => write!(f, "SHL {} {{,{}}}", x, y),
+            I9XY0(x, y) => write!(f, "SNE {}, {}", x, y),
+            IANNN(nnn) => write!(f, "LD I, {}", nnn),
+            IBNNN(nnn) => write!(f, "JP V0, {}", nnn),
+            ICXNN(x, vv) => write!(f, "RND {}, {}", x, vv),
+            IDXYN(x, y, v) => write!(f, "DRW {}, {}, {}", x, y, v),
+            IEX9E(x) => write!(f, "SKP {}", x),
+            IEXA1(x) => write!(f, "SKNP {}", x),
+            IFX07(x) => write!(f, "LD {}, DT", x),
+            IFX0A(x) => write!(f, "LD {}, K", x),
+            IFX15(x) => write!(f, "LD DT, {}", x),
+            IFX18(x) => write!(f, "LD ST, {}", x),
+            IFX1E(x) => write!(f, "ADD I, {}", x),
+            IFX29(x) => write!(f, "LD F, {}", x),
+            IFX33(x) => write!(f, "LD B, {}", x),
+            IFX55(x) => write!(f, "LD [I], {}", x),
+            IFX65(x) => write!(f, "LD {}, [I]", x),
+        }
+    }
 }
 
 impl Instruction {
@@ -151,8 +208,8 @@ impl Instruction {
             Value8(0x1E) => Ok(IFX1E(x)),
             Value8(0x29) => Ok(IFX29(x)),
             Value8(0x33) => Ok(IFX33(x)),
-            Value8(0x55) => Ok(IFX55(x.0.into())),
-            Value8(0x65) => Ok(IFX65(x.0.into())),
+            Value8(0x55) => Ok(IFX55(x)),
+            Value8(0x65) => Ok(IFX65(x)),
             _ => Err(()),
         }
     }
@@ -215,12 +272,6 @@ mod tests {
     fn register() {
         assert_eq!(Register::from(0x0A), Register(0x0A));
         assert_eq!(Register::from(0x1A), Register(0x0A));
-    }
-
-    #[test]
-    fn register_range() {
-        assert_eq!(RegisterRange::from(0x0A), RegisterRange(0x0A));
-        assert_eq!(RegisterRange::from(0x1A), RegisterRange(0x0A));
     }
 
     #[test]

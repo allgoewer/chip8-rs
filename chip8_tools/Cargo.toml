@@ -21,6 +21,7 @@ path = "src/bin/disasm.rs"
 [dependencies]
 chip8_core = { path = "../chip8_core", features = ["std"] }
 anyhow = "1"
+rand = { version = "0.8" }
 log = { version = "0.4", features = ["release_max_level_debug"] }
 env_logger = "0.9"
 minifb = "0.19"

@@ -7,7 +7,6 @@ pub mod peripherals;
 
 use crate::peripherals::{FallingEdges, Graphics, Keypad, Keys, Pos, Sprite, Timer};
 use instructions::{Instruction, Register};
-use rand::prelude::*;
 #[cfg(feature = "std")]
 use log::{debug, trace};
 
@@ -23,7 +22,7 @@ fn bcd(val: u8) -> (u8, u8, u8) {
 }
 
 #[derive(Debug)]
-pub struct Core<'memory> {
+pub struct Core<'memory, R> {
     mem: &'memory mut [u8],
     reg: &'memory mut [u8],
     stack: &'memory mut [u16],
@@ -31,10 +30,11 @@ pub struct Core<'memory> {
     pc: u16,
     sp: u8,
     last_instruction: Option<Instruction>,
+    random_gen: R,
 }
 
 #[cfg(feature = "std")]
-impl std::fmt::Display for Core<'_> {
+impl<R> std::fmt::Display for Core<'_, R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(instruction) = &self.last_instruction {
             write!(
@@ -52,11 +52,14 @@ impl std::fmt::Display for Core<'_> {
     }
 }
 
-impl<'memory> Core<'memory> {
+impl<'memory, R> Core<'memory, R>
+where
+    R: FnMut() -> u8,
+{
     const VF: Register = Register(15);
     const FONT_LEN: usize = 5;
 
-    pub fn new(mem: &'memory mut [u8], reg: &'memory mut [u8], stack: &'memory mut [u16]) -> Self {
+    pub fn new(mem: &'memory mut [u8], reg: &'memory mut [u8], stack: &'memory mut [u16], random_gen: R) -> Self {
         assert!(mem.len() >= 2048);
         assert!(reg.len() >= 16);
         assert!(stack.len() >= 16);
@@ -71,6 +74,7 @@ impl<'memory> Core<'memory> {
             pc: 0x200,
             sp: 0,
             last_instruction: None,
+            random_gen,
         }
     }
 
@@ -258,7 +262,9 @@ impl<'memory> Core<'memory> {
 
             // RND Vx, byte
             // Set Vx = random byte AND kk
-            ICXNN(x, vv) => *self.r(x) = thread_rng().gen::<u8>() & vv.0,
+            ICXNN(x, vv) => {
+                *self.r(x) = (self.random_gen)() & vv.0;
+            }
 
             // DRW Vx, Vy, nibble
             // Display sprite (length: val bytes) starting at memory location I at (reg0, reg1)
@@ -446,8 +452,8 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 #[derive(Debug)]
-pub struct Chip8<'memory, K, G, TD, TS> {
-    core: Core<'memory>,
+pub struct Chip8<'memory, K, G, TD, TS, R> {
+    core: Core<'memory, R>,
     core_freq: u32,
     keypad: K,
     graphics: G,
@@ -458,21 +464,22 @@ pub struct Chip8<'memory, K, G, TD, TS> {
 }
 
 #[cfg(feature = "std")]
-impl<K, G, TD, TS> std::fmt::Display for Chip8<'_, K, G, TD, TS> {
+impl<K, G, TD, TS, R> std::fmt::Display for Chip8<'_, K, G, TD, TS, R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.core)
     }
 }
 
-impl<'memory, K, G, TD, TS> Chip8<'memory, K, G, TD, TS>
+impl<'memory, K, G, TD, TS, R> Chip8<'memory, K, G, TD, TS, R>
 where
     K: Keypad,
     G: Graphics,
     TD: Timer,
     TS: Timer,
+    R: FnMut() -> u8,
 {
     pub fn new(
-        core: Core<'memory>,
+        core: Core<'memory, R>,
         core_freq: u32,
         keypad: K,
         graphics: G,

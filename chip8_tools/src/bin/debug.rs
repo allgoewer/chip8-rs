@@ -4,6 +4,7 @@ use chip8_tools::util::minifb::MinifbDisplay;
 use chip8_core::Chip8;
 use std::io::Write;
 use std::sync::mpsc::channel;
+use rand::prelude::*;
 
 fn main() {
     let path = std::env::args().skip(1).next().expect("Give ROM path");
@@ -21,7 +22,7 @@ fn main() {
 
     std::thread::spawn(move || {
         let mut chip8 = Chip8::new(
-            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
+            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..], || rand::thread_rng().gen()),
             700,
             NullKeypad,
             graphics_adapter,

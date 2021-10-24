@@ -21,7 +21,7 @@ ARGS:
 fn main() -> Result<()> {
     env_logger::init();
 
-    let path = match std::env::args().skip(1).next() {
+    let path = match std::env::args().nth(1) {
         Some(path) => path,
         None => {
             eprintln!("{}", HELP);

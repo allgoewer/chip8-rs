@@ -7,7 +7,7 @@ use std::sync::mpsc::channel;
 use rand::prelude::*;
 
 fn main() {
-    let path = std::env::args().skip(1).next().expect("Give ROM path");
+    let path = std::env::args().nth(1).expect("Give ROM path");
 
     let mut mem = vec![0; 2048];
     let mut reg = vec![0; 16];
@@ -38,12 +38,12 @@ fn main() {
             print!("cmd: ");
             std::io::stdout().flush().expect("couldn't flush stdout");
 
-            if let Ok(_) = std::io::stdin().read_line(&mut cmd) {
+            if std::io::stdin().read_line(&mut cmd).is_ok() {
                 match &cmd[..] {
                     "\n" | "s\n" | "step\n" => {
                         chip8.tick().expect("Error ticking chip8");
                         println!("{}", chip8);
-                        println!("");
+                        println!();
                     }
                     "e\n" | "q\n" | "exit\n" | "quit\n" => break,
                     _ => (),

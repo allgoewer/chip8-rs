@@ -4,7 +4,7 @@ use chip8_core::Error;
 
 fn main() {
     let mut rom = vec![0; 2048];
-    let path = std::env::args().skip(1).next().expect("Give path to ROM");
+    let path = std::env::args().nth(1).expect("Give path to ROM");
 
     load_program(path, &mut rom[..]).expect("Failed loading ROM");
 

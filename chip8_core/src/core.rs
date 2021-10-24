@@ -1,6 +1,7 @@
 use crate::instructions::{Instruction, Register};
 use crate::peripherals::{FallingEdges, Graphics, Keys, Pos, Random, Sprite, Timer};
 use crate::Error;
+use ::core::borrow::Borrow;
 #[cfg(feature = "std")]
 use log::{debug, trace};
 
@@ -127,7 +128,7 @@ where
         let mut pc = |pc| pc_after = pc;
 
         let instruction = Instruction::try_from(&self.mem[self.pc as usize..])?;
-        match instruction.clone() {
+        match &instruction {
             // SYS addr
             // Jump to a machine code routine at nnn
             I0NNN(_nnn) => unimplemented!(),
@@ -353,7 +354,7 @@ where
             // Store registers V0 through Vx in memory starting at location I
             IFX55(x) => {
                 for i in 0..(x.0 + 1) {
-                    self.mem[self.i as usize + i as usize] = *self.r(i.into());
+                    self.mem[self.i as usize + i as usize] = *self.r(&i.into());
                 }
             }
 
@@ -361,7 +362,7 @@ where
             // Read registers V0 through Vx from memory starting at location I
             IFX65(x) => {
                 for i in 0..(x.0 + 1) {
-                    *self.r(i.into()) = self.mem[self.i as usize + i as usize];
+                    *self.r(&i.into()) = self.mem[self.i as usize + i as usize];
                 }
             }
         }
@@ -389,8 +390,8 @@ where
         Ok(())
     }
 
-    fn r(&mut self, reg: Register) -> &mut u8 {
-        &mut self.reg[reg.0 as usize]
+    fn r(&mut self, reg: impl Borrow<Register>) -> &mut u8 {
+        &mut self.reg[reg.borrow().0 as usize]
     }
 
     fn pop(&mut self) -> Result<u16, Error> {

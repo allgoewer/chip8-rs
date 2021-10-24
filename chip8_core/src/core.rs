@@ -353,7 +353,7 @@ where
             // LD [I], Vx
             // Store registers V0 through Vx in memory starting at location I
             IFX55(x) => {
-                for i in 0..(x.0 + 1) {
+                for i in 0..=x.0 {
                     self.mem[self.i as usize + i as usize] = *self.r(&i.into());
                 }
             }
@@ -361,7 +361,7 @@ where
             // LD Vx, [I]
             // Read registers V0 through Vx from memory starting at location I
             IFX65(x) => {
-                for i in 0..(x.0 + 1) {
+                for i in 0..=x.0 {
                     *self.r(&i.into()) = self.mem[self.i as usize + i as usize];
                 }
             }

@@ -1,5 +1,4 @@
 use crate::Error;
-use std::convert::{TryFrom, TryInto};
 use Instruction::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

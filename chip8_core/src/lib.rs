@@ -4,8 +4,6 @@
 pub mod instructions;
 pub mod peripherals;
 
-use std::convert::TryFrom;
-
 use crate::peripherals::{FallingEdges, Graphics, Keypad, Keys, Pos, Sprite, Timer};
 use instructions::{Instruction, Register};
 use log::{debug, trace};

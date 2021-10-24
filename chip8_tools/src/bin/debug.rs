@@ -1,8 +1,8 @@
-use chip8::core;
-use chip8::peripherals::{DownTimer, NullKeypad};
-use chip8::util::load_program;
-use chip8::util::minifb::MinifbDisplay;
-use chip8::Chip8;
+use chip8_core::core;
+use chip8_core::peripherals::{DownTimer, NullKeypad};
+use chip8_tools::util::load_program;
+use chip8_tools::util::minifb::MinifbDisplay;
+use chip8_core::Chip8;
 use std::io::Write;
 use std::sync::mpsc::channel;
 

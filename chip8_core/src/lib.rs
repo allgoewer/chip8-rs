@@ -3,7 +3,6 @@
 
 pub mod core;
 pub mod peripherals;
-pub mod util;
 
 use crate::core::Core;
 use crate::peripherals::{Graphics, Keypad, Timer};

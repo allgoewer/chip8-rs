@@ -1,29 +1,6 @@
-[package]
-name = "chip8-rs"
-version = "0.1.0"
-edition = "2018"
+[workspace]
 
-[lib]
-name = "chip8"
-path = "src/lib.rs"
-
-[[bin]]
-name = "chip8-emu"
-path = "src/main.rs"
-
-[[bin]]
-name = "chip8-disasm"
-path = "src/tools/disasm.rs"
-
-[[bin]]
-name = "chip8-debug"
-path = "src/tools/debug.rs"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-minifb = "0.19"
-rand = "0.8"
-anyhow = "1"
-log = { version = "0.4", features = ["release_max_level_debug"] }
-env_logger = "0.9"
+members = [
+    "chip8_core",
+    "chip8_tools"
+]

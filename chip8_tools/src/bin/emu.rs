@@ -1,11 +1,11 @@
 use std::sync::mpsc::channel;
 
 use anyhow::{Context, Result};
-use chip8::core;
-use chip8::peripherals::DownTimer;
-use chip8::util::load_program;
-use chip8::util::minifb::MinifbDisplay;
-use chip8::Chip8;
+use chip8_core::core;
+use chip8_core::peripherals::DownTimer;
+use chip8_tools::util::load_program;
+use chip8_tools::util::minifb::MinifbDisplay;
+use chip8_core::Chip8;
 use log::{debug, error, info};
 
 const HELP: &str = "\

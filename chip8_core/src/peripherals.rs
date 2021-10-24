@@ -1,5 +1,5 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FallingEdges(pub(crate) u16);
+pub struct FallingEdges(pub u16);
 
 impl FallingEdges {
     /// Pop the index of the next edge.
@@ -28,7 +28,7 @@ impl FallingEdges {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Keys(pub(crate) u16);
+pub struct Keys(pub u16);
 
 impl Keys {
     pub fn pressed(&self, idx: u8) -> bool {

@@ -1,4 +1,4 @@
-use crate::peripherals::{FallingEdges, Graphics, Keypad, Keys, Pos, Sprite};
+use chip8_core::peripherals::{FallingEdges, Graphics, Keypad, Keys, Pos, Sprite};
 use log::debug;
 use minifb::{Error, Key, Window, WindowOptions};
 use std::sync::{

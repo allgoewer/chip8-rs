@@ -1,0 +1,26 @@
+[package]
+name = "chip8_tools"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "chip8-emu"
+path = "src/bin/emu.rs"
+
+[[bin]]
+name = "chip8-dbg"
+path = "src/bin/debug.rs"
+
+[[bin]]
+name = "chip8-dis"
+path = "src/bin/disasm.rs"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chip8_core = { path = "../chip8_core" }
+anyhow = "1"
+log = { version = "0.4", features = ["release_max_level_debug"] }
+env_logger = "0.9"
+minifb = "0.19"

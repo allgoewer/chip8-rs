@@ -1,6 +1,6 @@
-use chip8::core::instructions::Instruction;
-use chip8::util::load_program;
-use chip8::Error;
+use chip8_core::core::instructions::Instruction;
+use chip8_tools::util::load_program;
+use chip8_core::Error;
 use std::convert::TryFrom;
 
 fn main() {

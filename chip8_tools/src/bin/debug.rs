@@ -1,10 +1,10 @@
 use chip8_core::peripherals::{DownTimer, NullKeypad};
+use chip8_core::Chip8;
 use chip8_tools::util::load_program;
 use chip8_tools::util::minifb::MinifbDisplay;
-use chip8_core::Chip8;
+use rand::prelude::*;
 use std::io::Write;
 use std::sync::mpsc::channel;
-use rand::prelude::*;
 
 fn main() {
     let path = std::env::args().nth(1).expect("Give ROM path");
@@ -22,7 +22,9 @@ fn main() {
 
     std::thread::spawn(move || {
         let mut chip8 = Chip8::new(
-            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..], || rand::thread_rng().gen()),
+            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..], || {
+                rand::thread_rng().gen()
+            }),
             700,
             NullKeypad,
             graphics_adapter,

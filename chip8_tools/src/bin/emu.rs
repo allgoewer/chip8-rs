@@ -2,9 +2,9 @@ use std::sync::mpsc::channel;
 
 use anyhow::{Context, Result};
 use chip8_core::peripherals::DownTimer;
+use chip8_core::Chip8;
 use chip8_tools::util::load_program;
 use chip8_tools::util::minifb::MinifbDisplay;
-use chip8_core::Chip8;
 use log::{debug, error, info};
 use rand::prelude::*;
 
@@ -48,7 +48,9 @@ fn main() -> Result<()> {
     debug!("Spawning CHIP-8 thread");
     std::thread::spawn(move || {
         let mut chip8 = Chip8::new(
-            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..], || rand::thread_rng().gen()),
+            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..], || {
+                rand::thread_rng().gen()
+            }),
             700,
             keypad_adapter,
             graphics_adapter,

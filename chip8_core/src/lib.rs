@@ -59,7 +59,12 @@ where
     const VF: Register = Register(15);
     const FONT_LEN: usize = 5;
 
-    pub fn new(mem: &'memory mut [u8], reg: &'memory mut [u8], stack: &'memory mut [u16], random_gen: R) -> Self {
+    pub fn new(
+        mem: &'memory mut [u8],
+        reg: &'memory mut [u8],
+        stack: &'memory mut [u16],
+        random_gen: R,
+    ) -> Self {
         assert!(mem.len() >= 2048);
         assert!(reg.len() >= 16);
         assert!(stack.len() >= 16);
@@ -422,7 +427,6 @@ mod tests {
         assert_eq!(super::bcd(003), (0, 0, 3));
     }
 }
-
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {

@@ -1,6 +1,6 @@
 use chip8_core::instructions::Instruction;
-use chip8_tools::util::load_program;
 use chip8_core::Error;
+use chip8_tools::util::load_program;
 
 fn main() {
     let mut rom = vec![0; 2048];

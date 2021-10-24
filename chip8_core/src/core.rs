@@ -4,15 +4,14 @@ use crate::Error;
 #[cfg(feature = "std")]
 use log::{debug, trace};
 
-fn bcd(val: u8) -> (u8, u8, u8) {
+fn bcd(mut val: u8) -> (u8, u8, u8) {
     let hundreds = val / 100;
+    val -= hundreds * 100;
 
-    let val = val - (hundreds * 100);
     let tens = val / 10;
+    val -= tens * 10;
 
-    let ones = val - (tens * 10);
-
-    (hundreds, tens, ones)
+    (hundreds, tens, val)
 }
 
 #[derive(Debug)]

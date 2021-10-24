@@ -1,4 +1,3 @@
-use chip8_core::core;
 use chip8_core::peripherals::{DownTimer, NullKeypad};
 use chip8_tools::util::load_program;
 use chip8_tools::util::minifb::MinifbDisplay;
@@ -22,7 +21,7 @@ fn main() {
 
     std::thread::spawn(move || {
         let mut chip8 = Chip8::new(
-            core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
+            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
             700,
             NullKeypad,
             graphics_adapter,

@@ -23,6 +23,7 @@ pub struct Core<'memory, R> {
     i: u16,
     pc: u16,
     sp: u8,
+    #[cfg(feature = "std")]
     last_instruction: Option<Instruction>,
     random_gen: R,
 }
@@ -72,6 +73,7 @@ where
             i: 0,
             pc: 0x200,
             sp: 0,
+            #[cfg(feature = "std")]
             last_instruction: None,
             random_gen,
         }
@@ -379,10 +381,11 @@ where
             ModPc::Ret(pc) => self.pc = pc + 2,
         }
 
-        self.last_instruction = Some(instruction);
-
         #[cfg(feature = "std")]
-        trace!("{}", self);
+        {
+            self.last_instruction = Some(instruction);
+            trace!("{}", self);
+        }
 
         Ok(())
     }

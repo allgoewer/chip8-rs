@@ -1,5 +1,5 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FallingEdges(pub u16);
+pub struct FallingEdges(u16);
 
 impl FallingEdges {
     /// Pop the index of the next edge.

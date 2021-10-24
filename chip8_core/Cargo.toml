@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-std = []
+std = ["log"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = { version = "0.4", features = ["release_max_level_debug"] }
+log = { version = "0.4", features = ["release_max_level_debug"], optional = true }

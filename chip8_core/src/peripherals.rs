@@ -119,6 +119,7 @@ impl Timer for DownTimer<'_> {
         let (new_val, overflow) = self.val.overflowing_sub(1);
         self.val = new_val;
 
+        #[cfg(feature = "std")]
         if log::log_enabled!(log::Level::Debug) && overflow {
             log::debug!("{} timer overflowed", self.name);
         }

@@ -8,7 +8,7 @@ pub mod peripherals;
 
 pub use crate::core::Core;
 
-use crate::peripherals::{Graphics, Keypad, Timer};
+use crate::peripherals::{Graphics, Keypad, Random, Timer};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
@@ -62,7 +62,7 @@ where
     G: Graphics,
     TD: Timer,
     TS: Timer,
-    R: FnMut() -> u8,
+    R: Random,
 {
     pub fn new(
         core: Core<'memory, R>,

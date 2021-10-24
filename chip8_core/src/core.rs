@@ -1,5 +1,5 @@
 use crate::instructions::{Instruction, Register};
-use crate::peripherals::{FallingEdges, Graphics, Keys, Pos, Sprite, Timer};
+use crate::peripherals::{FallingEdges, Graphics, Keys, Pos, Random, Sprite, Timer};
 use crate::Error;
 #[cfg(feature = "std")]
 use log::{debug, trace};
@@ -48,7 +48,7 @@ impl<R> std::fmt::Display for Core<'_, R> {
 
 impl<'memory, R> Core<'memory, R>
 where
-    R: FnMut() -> u8,
+    R: Random,
 {
     const VF: Register = Register(15);
     const FONT_LEN: usize = 5;
@@ -262,7 +262,7 @@ where
             // RND Vx, byte
             // Set Vx = random byte AND kk
             ICXNN(x, vv) => {
-                *self.r(x) = (self.random_gen)() & vv.0;
+                *self.r(x) = self.random_gen.random() & vv.0;
             }
 
             // DRW Vx, Vy, nibble

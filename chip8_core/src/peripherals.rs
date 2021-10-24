@@ -96,6 +96,19 @@ impl Graphics for NullGraphics {
     fn refresh(&mut self) {}
 }
 
+pub trait Random {
+    fn random(&mut self) -> u8;
+}
+
+impl<F> Random for F
+where
+    F: FnMut() -> u8,
+{
+    fn random(&mut self) -> u8 {
+        self()
+    }
+}
+
 pub trait Timer {
     fn tick(&mut self) -> bool;
     fn get(&self) -> u8;

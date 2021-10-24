@@ -1,13 +1,15 @@
 #![forbid(unsafe_code)]
 #![warn(/*missing_docs,*/ missing_debug_implementations, rust_2018_idioms)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod instructions;
 pub mod peripherals;
 
 use crate::peripherals::{FallingEdges, Graphics, Keypad, Keys, Pos, Sprite, Timer};
 use instructions::{Instruction, Register};
-use log::{debug, trace};
 use rand::prelude::*;
+#[cfg(feature = "std")]
+use log::{debug, trace};
 
 fn bcd(val: u8) -> (u8, u8, u8) {
     let hundreds = val / 100;
@@ -31,6 +33,7 @@ pub struct Core<'memory> {
     last_instruction: Option<Instruction>,
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Core<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(instruction) = &self.last_instruction {
@@ -304,6 +307,7 @@ impl<'memory> Core<'memory> {
             IFX0A(x) => {
                 let old_edges = edges.clone();
                 if let Some(idx) = edges.pop_next_idx() {
+                    #[cfg(feature = "std")]
                     debug!("IFX0A {:?}", old_edges);
                     *self.r(x) = idx;
                 } else {
@@ -372,6 +376,7 @@ impl<'memory> Core<'memory> {
 
         self.last_instruction = Some(instruction);
 
+        #[cfg(feature = "std")]
         trace!("{}", self);
 
         Ok(())
@@ -420,12 +425,13 @@ pub enum Error {
     StackOverflow,
 }
 
-impl From<std::array::TryFromSliceError> for Error {
-    fn from(_: std::array::TryFromSliceError) -> Self {
+impl From<core::array::TryFromSliceError> for Error {
+    fn from(_: core::array::TryFromSliceError) -> Self {
         Self::InvalidAlignment
     }
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -436,6 +442,7 @@ impl std::fmt::Display for Error {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for Error {}
 
 #[derive(Debug)]
@@ -450,6 +457,7 @@ pub struct Chip8<'memory, K, G, TD, TS> {
     timer_freq_count: u32,
 }
 
+#[cfg(feature = "std")]
 impl<K, G, TD, TS> std::fmt::Display for Chip8<'_, K, G, TD, TS> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.core)
@@ -483,6 +491,7 @@ where
         }
     }
 
+    #[cfg(feature = "std")]
     pub fn run(&mut self) -> Result<(), Error> {
         use std::thread::sleep;
         use std::time::{Duration, Instant};

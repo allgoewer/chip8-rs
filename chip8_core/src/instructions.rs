@@ -10,6 +10,7 @@ impl From<u8> for Register {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Register {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "V{:X}", self.0)
@@ -25,6 +26,7 @@ impl From<(u8, u8, u8)> for Address {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Address {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:03X}", self.0)
@@ -40,6 +42,7 @@ impl From<(u8, u8)> for Value8 {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Value8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:02X}", self.0)
@@ -55,6 +58,7 @@ impl From<u8> for Value4 {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Value4 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:X}", self.0)
@@ -109,6 +113,7 @@ pub enum Instruction {
     IFX65(Register),
 }
 
+#[cfg(feature = "std")]
 impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -247,7 +252,7 @@ impl TryFrom<&[u8]> for Instruction {
 mod tests {
     use super::*;
     use crate::Error::*;
-    use std::convert::TryFrom;
+    use core::convert::TryFrom;
 
     macro_rules! itf_ok {
         ( $upper:expr, $lower:expr, $rhs:expr ) => {

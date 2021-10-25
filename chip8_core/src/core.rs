@@ -17,7 +17,7 @@ fn bcd(mut val: u8) -> (u8, u8, u8) {
 
 /// The CHIP-8 core, not including any peripherals
 #[derive(Debug)]
-pub struct Core<'memory, R> {
+pub struct Core<'memory> {
     mem: &'memory mut [u8],
     reg: &'memory mut [u8],
     stack: &'memory mut [u16],
@@ -26,11 +26,10 @@ pub struct Core<'memory, R> {
     sp: u8,
     #[cfg(feature = "std")]
     last_instruction: Option<Instruction>,
-    random_gen: R,
 }
 
 #[cfg(feature = "std")]
-impl<R> std::fmt::Display for Core<'_, R> {
+impl std::fmt::Display for Core<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(instruction) = &self.last_instruction {
             write!(
@@ -48,10 +47,7 @@ impl<R> std::fmt::Display for Core<'_, R> {
     }
 }
 
-impl<'memory, R> Core<'memory, R>
-where
-    R: Random,
-{
+impl<'memory> Core<'memory> {
     const VF: Register = Register(15);
     const FONT_LEN: usize = 5;
 
@@ -62,12 +58,7 @@ where
     /// * mem.len() >= 2048
     /// * reg.len() >= 16
     /// * stack.len >= 16
-    pub fn new(
-        mem: &'memory mut [u8],
-        reg: &'memory mut [u8],
-        stack: &'memory mut [u16],
-        random_gen: R,
-    ) -> Self {
+    pub fn new(mem: &'memory mut [u8], reg: &'memory mut [u8], stack: &'memory mut [u16]) -> Self {
         assert!(mem.len() >= 2048);
         assert!(reg.len() >= 16);
         assert!(stack.len() >= 16);
@@ -83,7 +74,6 @@ where
             sp: 0,
             #[cfg(feature = "std")]
             last_instruction: None,
-            random_gen,
         }
     }
 
@@ -110,11 +100,12 @@ where
     }
 
     /// Execute a single tick of the core with the given peripherals
-    pub fn tick<G, TD, TS>(
+    pub fn tick<G, R, TD, TS>(
         &mut self,
         keys: Keys,
         mut edges: FallingEdges,
         graphics: &mut G,
+        random: &mut R,
         timer_delay: &mut TD,
         timer_sound: &mut TS,
     ) -> Result<(), Error>
@@ -122,6 +113,7 @@ where
         G: Graphics,
         TD: Timer,
         TS: Timer,
+        R: Random,
     {
         enum ModPc {
             Hold,
@@ -274,7 +266,7 @@ where
             // RND Vx, byte
             // Set Vx = random byte AND kk
             ICXNN(x, vv) => {
-                *self.r(x) = self.random_gen.random() & vv.0;
+                *self.r(x) = random.random() & vv.0;
             }
 
             // DRW Vx, Vy, nibble

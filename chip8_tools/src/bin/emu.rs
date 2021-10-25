@@ -48,12 +48,11 @@ fn main() -> Result<()> {
     debug!("Spawning CHIP-8 thread");
     std::thread::spawn(move || {
         let mut chip8 = Chip8::new(
-            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..], || {
-                rand::thread_rng().gen()
-            }),
+            chip8_core::Core::new(&mut mem[..], &mut reg[..], &mut stack[..]),
             700,
             keypad_adapter,
             graphics_adapter,
+            || thread_rng().gen(),
             DownTimer::new("delay"),
             DownTimer::new("sound"),
         );

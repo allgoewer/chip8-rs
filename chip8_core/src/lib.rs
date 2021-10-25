@@ -53,11 +53,12 @@ impl std::error::Error for Error {}
 
 /// A runnable CHIP-8 implementation. This includes a core + all necessary peripherals.
 #[derive(Debug)]
-pub struct Chip8<'memory, K, G, TD, TS, R> {
-    core: Core<'memory, R>,
+pub struct Chip8<'memory, K, G, R, TD, TS> {
+    core: Core<'memory>,
     core_freq: u32,
     keypad: K,
     graphics: G,
+    random: R,
     timer_delay: TD,
     timer_sound: TS,
     timer_freq_div: u32,
@@ -71,7 +72,7 @@ impl<K, G, TD, TS, R> std::fmt::Display for Chip8<'_, K, G, TD, TS, R> {
     }
 }
 
-impl<'memory, K, G, TD, TS, R> Chip8<'memory, K, G, TD, TS, R>
+impl<'memory, K, G, R, TD, TS> Chip8<'memory, K, G, R, TD, TS>
 where
     K: Keypad,
     G: Graphics,
@@ -81,10 +82,11 @@ where
 {
     /// Generate a new Chip8
     pub fn new(
-        core: Core<'memory, R>,
+        core: Core<'memory>,
         core_freq: u32,
         keypad: K,
         graphics: G,
+        random: R,
         timer_delay: TD,
         timer_sound: TS,
     ) -> Self {
@@ -93,6 +95,7 @@ where
             core_freq,
             keypad,
             graphics,
+            random,
             timer_delay,
             timer_sound,
             timer_freq_div: core_freq / 60,
@@ -141,6 +144,7 @@ where
             keys,
             edges,
             &mut self.graphics,
+            &mut self.random,
             &mut self.timer_delay,
             &mut self.timer_sound,
         )

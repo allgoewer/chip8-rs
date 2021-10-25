@@ -188,7 +188,7 @@ impl<'memory> Core<'memory> {
             // Add Vx, byte
             // Set Vx = Vx + kk
             I7XNN(x, vv) => {
-                let (val, _) = self.r(x.clone()).overflowing_add(vv.0);
+                let (val, _) = self.r(x).overflowing_add(vv.0);
                 *self.r(x) = val;
             }
 
@@ -211,7 +211,7 @@ impl<'memory> Core<'memory> {
             // ADD Vx, Vy
             // Set Vx = Vx + Vy, set VF = carry
             I8XY4(x, y) => {
-                let (val, carry) = self.r(x.clone()).overflowing_add(*self.r(y));
+                let (val, carry) = self.r(x).overflowing_add(*self.r(y));
                 *self.r(x) = val;
                 *self.r(Self::VF) = if carry { 1 } else { 0 };
             }
@@ -219,7 +219,7 @@ impl<'memory> Core<'memory> {
             // SUB Vx, Vy
             // Set Vx = Vx - Vy, set VF = NOT borrow
             I8XY5(x, y) => {
-                let (val, carry) = self.r(x.clone()).overflowing_sub(*self.r(y));
+                let (val, carry) = self.r(x).overflowing_sub(*self.r(y));
                 *self.r(x) = val;
                 *self.r(Self::VF) = if carry { 0 } else { 1 };
             }
@@ -227,14 +227,14 @@ impl<'memory> Core<'memory> {
             // SHR Vx {, Vy}, set VF
             // Set Vx = Vx SHR 1
             I8XY6(x, _y) => {
-                *self.r(Self::VF) = *self.r(x.clone()) & 0x01;
+                *self.r(Self::VF) = *self.r(x) & 0x01;
                 *self.r(x) /= 2;
             }
 
             // SUBN Vy, Vx
             // Set Vx = Vy - Vx, set VF = NOT borrow
             I8XY7(x, y) => {
-                let (val, carry) = self.r(y).overflowing_sub(*self.r(x.clone()));
+                let (val, carry) = self.r(y).overflowing_sub(*self.r(x));
                 *self.r(x) = val;
                 *self.r(Self::VF) = if carry { 0 } else { 1 };
             }
@@ -242,7 +242,7 @@ impl<'memory> Core<'memory> {
             // SHL Vx {, Vy}, set VF
             // Set Vx SHL 1
             I8XYE(x, _y) => {
-                let (val, carry) = self.r(x.clone()).overflowing_mul(2);
+                let (val, carry) = self.r(x).overflowing_mul(2);
                 *self.r(x) = val;
                 *self.r(Self::VF) = if carry { 1 } else { 0 };
             }

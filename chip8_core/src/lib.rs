@@ -1,19 +1,33 @@
 #![forbid(unsafe_code)]
-#![warn(/*missing_docs,*/ missing_debug_implementations, rust_2018_idioms)]
+#![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+//! A CHIP-8 emulator written in rust
+//!
+//! # Crate-level features
+//! There is no `default` feature in this crate, stdlib support must be enabled manually.
+//!
+//! `std` : Enables stdlib support, by default the crate is compiled with `no_std`
+
+/// The core CHIP-8 architecture
 pub mod core;
+/// The CHIP-8 instruction set
 pub mod instructions;
+/// The CHIP-8 peripherals. This consists of traits and default implementations.
 pub mod peripherals;
 
 pub use crate::core::Core;
 
 use crate::peripherals::{Graphics, Keypad, Random, Timer};
 
+/// Crate Error structure
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
+    /// An invalid instruction was encountered
     InvalidInstruction(u16),
+    /// The decoded instruction has invalid alignemnt
     InvalidAlignment,
+    /// A stack overflow occured during execution
     StackOverflow,
 }
 
@@ -37,6 +51,7 @@ impl std::fmt::Display for Error {
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
 
+/// A runnable CHIP-8 implementation. This includes a core + all necessary peripherals.
 #[derive(Debug)]
 pub struct Chip8<'memory, K, G, TD, TS, R> {
     core: Core<'memory, R>,
@@ -64,6 +79,7 @@ where
     TS: Timer,
     R: Random,
 {
+    /// Generate a new Chip8
     pub fn new(
         core: Core<'memory, R>,
         core_freq: u32,
@@ -84,6 +100,9 @@ where
         }
     }
 
+    /// Run the Chip8
+    ///
+    /// Only available with the "std" feature, as [`std::thread::sleep`] is required.
     #[cfg(feature = "std")]
     pub fn run(&mut self) -> Result<(), Error> {
         use std::thread::sleep;
@@ -101,6 +120,7 @@ where
         }
     }
 
+    /// Execute a single tick of the Chip8
     pub fn tick(&mut self) -> Result<(), Error> {
         self.tick_core()?;
 

@@ -1,6 +1,9 @@
 use crate::Error;
 use Instruction::*;
 
+/// A Register index, 0 - 0x0F
+///
+/// CHIP-8 has 15 registers
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Register(pub(crate) u8);
 
@@ -17,6 +20,7 @@ impl std::fmt::Display for Register {
     }
 }
 
+/// An Address, a 12 bit value (0x000 - 0x0FFF)
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Address(pub(crate) u16);
 
@@ -33,6 +37,7 @@ impl std::fmt::Display for Address {
     }
 }
 
+/// A 8 bit intermediate value
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Value8(pub(crate) u8);
 
@@ -49,6 +54,7 @@ impl std::fmt::Display for Value8 {
     }
 }
 
+/// A 4 bit intermediate value
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Value4(pub(crate) u8);
 
@@ -65,7 +71,11 @@ impl std::fmt::Display for Value4 {
     }
 }
 
-fn nibbles(val: u16) -> (u8, u8, u8, u8) {
+/// Destructure a 2 byte value into its nibbles.
+///
+/// 0xABCD returns (0xA, 0xB, 0xC, 0xD) where for each of A - D
+/// only the lower four bits may be set.
+pub fn nibbles(val: u16) -> (u8, u8, u8, u8) {
     (
         ((val >> 12) as u8) & 0x0F,
         ((val >> 8) as u8) & 0x0F,
@@ -74,6 +84,8 @@ fn nibbles(val: u16) -> (u8, u8, u8, u8) {
     )
 }
 
+#[allow(missing_docs)]
+/// All possible Instructions the CHIP-8 cpu supports
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
     I0NNN(Address),
@@ -157,6 +169,7 @@ impl std::fmt::Display for Instruction {
 }
 
 impl Instruction {
+    /// Decode all 0nnn instructions
     fn decode_0(nnn: Address) -> Result<Self, ()> {
         match nnn {
             Address(0x00E0) => Ok(I00E0),
@@ -166,6 +179,7 @@ impl Instruction {
         }
     }
 
+    /// Decode all 5xyv instructions
     fn decode_5(x: Register, y: Register, v: Value4) -> Result<Self, ()> {
         match v {
             Value4(0) => Ok(I5XY0(x, y)),
@@ -173,6 +187,7 @@ impl Instruction {
         }
     }
 
+    /// Decode all 8xyv instructions
     fn decode_8(x: Register, y: Register, v: Value4) -> Result<Self, ()> {
         match v {
             Value4(0x0) => Ok(I8XY0(x, y)),
@@ -188,6 +203,7 @@ impl Instruction {
         }
     }
 
+    /// Decode all 9xyn instructions
     fn decode_9(x: Register, y: Register, n: Value4) -> Result<Self, ()> {
         match n {
             Value4(0) => Ok(I9XY0(x, y)),
@@ -195,6 +211,7 @@ impl Instruction {
         }
     }
 
+    /// Decode all 9xvv instructions
     fn decode_e(x: Register, vv: Value8) -> Result<Self, ()> {
         match vv {
             Value8(0x9E) => Ok(IEX9E(x)),
@@ -203,6 +220,7 @@ impl Instruction {
         }
     }
 
+    /// Decode all fxvv instructions
     fn decode_f(x: Register, vv: Value8) -> Result<Self, ()> {
         match vv {
             Value8(0x07) => Ok(IFX07(x)),

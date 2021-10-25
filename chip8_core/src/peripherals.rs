@@ -1,3 +1,5 @@
+/// A struct describing a number of falling edges.
+/// This is important to detect button releases.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FallingEdges(u16);
 
@@ -27,19 +29,23 @@ impl FallingEdges {
     }
 }
 
+/// A struct describing the current state of the CHIP-8's keypad buttons
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Keys(pub u16);
 
 impl Keys {
+    /// Whether the key with a given index is pressed
     pub fn pressed(&self, idx: u8) -> bool {
         let bit = 1 << idx;
         self.0 & bit != 0
     }
 
+    /// Calculates whether there are any falling edges between two distinct status of keys
     pub fn falling_edges(&self, after: &Self) -> FallingEdges {
         FallingEdges(self.0 & !after.0)
     }
 
+    /// Updates a state of keys with another state, returning any detected falling edges
     pub fn update(&mut self, after: &Self) -> Option<FallingEdges> {
         let edges = self.falling_edges(after);
         self.0 = after.0;
@@ -52,11 +58,16 @@ impl Keys {
     }
 }
 
+/// A trait describing a keypad
 pub trait Keypad {
+    /// The keys which are currently pressed
     fn pressed_keys(&self) -> Keys;
+    /// The most recently released key
     fn last_released_key(&mut self) -> FallingEdges;
 }
 
+/// A dummy keypad.
+/// It never has any of it's keys pressed.
 #[derive(Debug)]
 pub struct NullKeypad;
 
@@ -70,21 +81,34 @@ impl Keypad for NullKeypad {
     }
 }
 
+/// X, Y coordinates on a grid
 #[derive(Debug)]
 pub struct Pos(pub u8, pub u8);
 
+/// A sprite which can be drawn on a display
 #[derive(Debug)]
 pub struct Sprite<'memory>(pub &'memory [u8]);
 
+/// A trait describing a display
 pub trait Graphics {
+    /// The width of the display in pixels
     const WIDTH: usize = 64;
+    /// The height of the display in pixels
     const HEIGHT: usize = 32;
 
+    /// Clear the display
     fn clear(&mut self);
+    /// Toggle a sprite at the given position
+    ///
+    /// The pixels of the sprite are toggled individually by XORing the current pixel values
+    /// with the values of the sprite
     fn toggle_sprite(&mut self, pos: Pos, sprite: Sprite<'_>) -> bool;
+    /// Refresh the display
     fn refresh(&mut self);
 }
 
+/// A dummy display.
+/// It ignores all operations.
 #[derive(Debug)]
 pub struct NullGraphics;
 
@@ -96,7 +120,9 @@ impl Graphics for NullGraphics {
     fn refresh(&mut self) {}
 }
 
+/// An implementation of a RNG
 pub trait Random {
+    /// Return a random byte
     fn random(&mut self) -> u8;
 }
 
@@ -109,12 +135,20 @@ where
     }
 }
 
+/// A trait describing a timer
+///
+/// A timer has a 8-bit value and must be down-counting
 pub trait Timer {
+    /// Subtract one from the current value, wrapping around.
+    /// Returns true on wrap-around.
     fn tick(&mut self) -> bool;
+    /// Get the current timer value
     fn get(&self) -> u8;
+    /// Set the current timer value
     fn set(&mut self, val: u8);
 }
 
+/// An implementation of a down-counting timer
 #[derive(Debug)]
 pub struct DownTimer<'name> {
     val: u8,
@@ -122,6 +156,7 @@ pub struct DownTimer<'name> {
 }
 
 impl<'name> DownTimer<'name> {
+    /// Create a new DownTimer
     pub fn new(name: &'name str) -> Self {
         Self { val: 0, name }
     }

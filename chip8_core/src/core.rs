@@ -15,6 +15,7 @@ fn bcd(mut val: u8) -> (u8, u8, u8) {
     (hundreds, tens, val)
 }
 
+/// The CHIP-8 core, not including any peripherals
 #[derive(Debug)]
 pub struct Core<'memory, R> {
     mem: &'memory mut [u8],
@@ -54,6 +55,13 @@ where
     const VF: Register = Register(15);
     const FONT_LEN: usize = 5;
 
+    /// Create a new CHIP-8 core
+    ///
+    /// # Panic
+    /// This function panics if the following conditions are not fulfilled:
+    /// * mem.len() >= 2048
+    /// * reg.len() >= 16
+    /// * stack.len >= 16
     pub fn new(
         mem: &'memory mut [u8],
         reg: &'memory mut [u8],
@@ -79,6 +87,7 @@ where
         }
     }
 
+    /// Load the default font into the cores memory
     fn load_font(loc: &mut [u8]) {
         loc[0..(Self::FONT_LEN * 16)].copy_from_slice(&[
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -100,6 +109,7 @@ where
         ]);
     }
 
+    /// Execute a single tick of the core with the given peripherals
     pub fn tick<G, TD, TS>(
         &mut self,
         keys: Keys,

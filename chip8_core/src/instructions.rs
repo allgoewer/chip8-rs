@@ -67,10 +67,10 @@ impl std::fmt::Display for Value4 {
 
 fn nibbles(val: u16) -> (u8, u8, u8, u8) {
     (
-        (val >> 12) as u8,
-        (val >> 8) as u8,
-        (val >> 4) as u8,
-        val as u8,
+        ((val >> 12) as u8) & 0x0F,
+        ((val >> 8) as u8) & 0x0F,
+        ((val >> 4) as u8) & 0x0F,
+        (val as u8) & 0x0F,
     )
 }
 
@@ -302,5 +302,13 @@ mod tests {
     fn decode_0_err() {
         itf_err!(0x00, 0x00, InvalidInstruction(0x0000));
         itf_err!(0x01, 0xFF, InvalidInstruction(0x01FF));
+    }
+
+    #[test]
+    fn nibbles_ok() {
+        assert_eq!(nibbles(0xABCD), (0xA, 0xB, 0xC, 0xD));
+        assert_eq!(nibbles(0x0BCD), (0x0, 0xB, 0xC, 0xD));
+        assert_eq!(nibbles(0x00CD), (0x0, 0x0, 0xC, 0xD));
+        assert_eq!(nibbles(0x000D), (0x0, 0x0, 0x0, 0xD));
     }
 }
